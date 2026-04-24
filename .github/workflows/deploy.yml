@@ -1,0 +1,50 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: |
+          railway link --project ${{ secrets.RAILWAY_PROJECT_ID }} --environment production --yes
+          railway service link --yes
+          railway variable set \
+            NOTION_API_KEY="${{ secrets.NOTION_API_KEY }}" \
+            NOTION_STANDUP_DB_ID="${{ secrets.NOTION_STANDUP_DB_ID }}" \
+            NOTION_SUMMARY_PAGE_ID="${{ secrets.NOTION_SUMMARY_PAGE_ID }}" \
+            SMTP_HOST="${{ secrets.SMTP_HOST }}" \
+            SMTP_PORT="${{ secrets.SMTP_PORT }}" \
+            SMTP_USER="${{ secrets.SMTP_USER }}" \
+            SMTP_PASS="${{ secrets.SMTP_PASS }}" \
+            SMTP_FROM="${{ secrets.SMTP_FROM }}" \
+            ADMIN_TOKEN="${{ secrets.ADMIN_TOKEN }}" \
+            TZ="${{ secrets.TZ }}"
+          railway up --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Verify Deployment
+        run: |
+          sleep 30
+          curl -f https://standup-bot-notion-production.up.railway.app/health || exit 1
+
+      - name: Deployment Status
+        if: success()
+        run: echo "✅ Deployment successful!"
+
+      - name: Deployment Failed
+        if: failure()
+        run: echo "❌ Deployment failed!"
