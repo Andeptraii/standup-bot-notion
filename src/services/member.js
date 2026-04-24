@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const MEMBERS_FILE = path.join(__dirname, '..', '..', 'data', 'members.json');
+const MEMBERS_FILE = process.env.NODE_ENV === 'production'
+  ? '/railway/data/members.json'
+  : path.join(__dirname, '..', '..', 'data', 'members.json');
 
 class MemberValidationError extends Error {
   constructor(message) {
@@ -34,6 +36,10 @@ function readMembers() {
 }
 
 function writeMembers(members) {
+  const dir = path.dirname(MEMBERS_FILE);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
   fs.writeFileSync(MEMBERS_FILE, JSON.stringify(members, null, 2), 'utf-8');
 }
 
