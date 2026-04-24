@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standup Bot (Notion) - Bài Thuyết Trình</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --theme-primary-text: #181d26;
+            --theme-primary-blue: #1b61c9;
+            --theme-white: #ffffff;
+            --theme-success-green: #006400;
+            --theme-weak-text: rgba(4, 14, 32, 0.69);
+            --theme-border: #e0e2e6;
+            --theme-light-surface: #f8fafc;
+            --theme-dark-gray: #333333;
+            --theme-mid-blue: #254fad;
+        }
+
+        body {
+            font-family: -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e8eef5 100%);
+            color: var(--theme-primary-text);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slides-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            padding: 60px 80px;
+            background: var(--theme-white);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(15, 48, 106, 0.1);
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        .slide h1 {
+            font-size: 56px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--theme-primary-text);
+            letter-spacing: 0.5px;
+        }
+
+        .slide h2 {
+            font-size: 42px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: var(--theme-primary-text);
+            border-bottom: 3px solid var(--theme-primary-blue);
+            padding-bottom: 15px;
+        }
+
+        .slide h3 {
+            font-size: 28px;
+            font-weight: 500;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            color: var(--theme-primary-text);
+        }
+
+        .slide p, .slide li {
+            font-size: 18px;
+            line-height: 1.8;
+            color: var(--theme-primary-text);
+            margin-bottom: 12px;
+            letter-spacing: 0.18px;
+        }
+
+        .slide ul {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        .slide li {
+            margin-bottom: 10px;
+        }
+
+        .highlight {
+            color: var(--theme-primary-blue);
+            font-weight: 600;
+        }
+
+        .success {
+            color: var(--theme-success-green);
+            font-weight: 600;
+        }
+
+        .code-block {
+            background: var(--theme-light-surface);
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: var(--theme-primary-text);
+            margin: 15px 0;
+            border-left: 4px solid var(--theme-primary-blue);
+            overflow-x: auto;
+        }
+
+        .flow-diagram {
+            background: var(--theme-light-surface);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--theme-primary-text);
+            border: 1px solid var(--theme-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(45, 127, 249, 0.15);
+        }
+
+        th {
+            background: var(--theme-primary-blue);
+            color: var(--theme-white);
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--theme-border);
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: var(--theme-light-surface);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: var(--theme-white);
+            border-top: 1px solid var(--theme-border);
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        button {
+            background: var(--theme-primary-blue);
+            color: var(--theme-white);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background: #1450a8;
+            box-shadow: 0 2px 8px rgba(27, 97, 201, 0.3);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .slide-counter {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--theme-primary-text);
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .keyboard-hints {
+            font-size: 12px;
+            color: var(--theme-weak-text);
+            margin-top: 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .section-number {
+            display: inline-block;
+            background: var(--theme-primary-blue);
+            color: var(--theme-white);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .metric-box {
+            background: var(--theme-light-surface);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--theme-border);
+            text-align: center;
+        }
+
+        .metric-box h4 {
+            font-size: 14px;
+            color: var(--theme-weak-text);
+            margin-bottom: 8px;
+        }
+
+        .metric-box .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--theme-primary-blue);
+        }
+
+        .fullscreen-btn {
+            background: var(--theme-mid-blue);
+            padding: 10px 16px;
+            font-size: 12px;
+        }
+
+        .fullscreen-btn:hover {
+            background: #1c3d8a;
+        }
+
+        .progress-bar {
+            width: 300px;
+            height: 4px;
+            background: var(--theme-border);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--theme-primary-blue);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .tip-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 15px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid var(--theme-success-green);
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .slide {
+                padding: 40px 60px;
+            }
+
+            .slide h1 {
+                font-size: 48px;
+            }
+
+            .slide h2 {
+                font-size: 36px;
+            }
+
+            .slide h3 {
+                font-size: 24px;
+            }
+
+            .slide p, .slide li {
+                font-size: 16px;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Fullscreen styles */
+        .slide:fullscreen {
+            padding: 80px;
+        }
+
+        /* Print styles */
+        @media print {
+            .controls {
+                display: none;
+            }
+
+            .slide {
+                page-break-after: always;
+                box-shadow: none;
+                padding: 40px;
+            }
+        }
+
+        /* Slide-specific styles */
+        .title-slide {
+            background: linear-gradient(135deg, #1b61c9 0%, #254fad 100%);
+            color: var(--theme-white);
+        }
+
+        .title-slide h1 {
+            color: var(--theme-white);
+            font-size: 72px;
+            margin-bottom: 30px;
+        }
+
+        .title-slide p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 24px;
+        }
+
+        .title-slide .section-number {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <div class="slides-wrapper" id="slidesWrapper">
+            <!-- SLIDE 1: Title -->
+            <div class="slide title-slide active">
+                <h1>📊 STANDUP BOT</h1>
+                <h1 style="margin-top: -10px;">(NOTION)</h1>
+                <p style="margin-top: 40px; font-size: 28px;">Bài Thuyết Trình Dự Án</p>
+                <p style="margin-top: 30px; opacity: 0.8; font-size: 18px;">Tự động hoá quy trình standup hằng ngày</p>
+                <p style="margin-top: 60px; opacity: 0.7; font-size: 14px;">👨‍💻 Team: Nexlab | 📅 April 2026</p>
+            </div>
+
+            <!-- SLIDE 2: Overview -->
+            <div class="slide">
+                <span class="section-number">SLIDE 1</span>
+                <h2>🎯 Giới Thiệu Dự Án</h2>
+                <div style="margin-top: 30px;">
+                    <h3>Tên dự án</h3>
+                    <p><span class="highlight">Standup Bot for Notion</span> — Bot tự động hoá quy trình standup hằng ngày</p>
+
+                    <h3>Mục tiêu chính</h3>
+                    <ul>
+                        <li>Tự động hoá quy trình standup (8:45 → 8:55 → 9:00)</li>
+                        <li>Lưu trữ dữ liệu trực tiếp trên <span class="highlight">Notion</span> (không cần tool bên ngoài)</li>
+                        <li>Giảm công sức thủ công, tăng độ chính xác</li>
+                    </ul>
+
+                    <h3>Đối tượng sử dụng</h3>
+                    <p>Team phát triển sử dụng Notion làm workspace chính</p>
+                </div>
+            </div>
+
+            <!-- SLIDE 3: Problem Statement -->
+            <div class="slide">
+                <span class="section-number">SLIDE 2</span>
+                <h2>📌 Vấn Đề Cần Giải Quyết</h2>
+                <div style="margin-top: 30px;">
+                    <h3>❌ Tình trạng hiện tại</h3>
+                    <ul>
+                        <li>Standup được làm thủ công hoặc trên tool riêng biệt</li>
+                        <li>Dữ liệu nằm rải rác ở nhiều nơi (Slack, Excel, email...)</li>
+                        <li>Khó tra cứu lại lịch sử standup theo ngày/theo người</li>
+                        <li>Tốn thời gian nhắc nhở thành viên điền form</li>
+                        <li>Không có sự thống nhất về format dữ liệu</li>
+                    </ul>
+
+                    <h3>✅ Nhu cầu</h3>
+                    <ul>
+                        <li>Tự động gửi form standup vào lúc cố định (8:45)</li>
+                        <li>Tự động nhắc nhở những ai chưa điền (8:55)</li>
+                        <li>Tự động tổng hợp dữ liệu thành báo cáo (9:00)</li>
+                        <li>Lưu trữ tất cả trên Notion để dễ truy cập</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- SLIDE 4: Solution -->
+            <div class="slide">
+                <span class="section-number">SLIDE 3</span>
+                <h2>💡 Giải Pháp Đề Xuất</h2>
+                <p style="margin-top: 20px; font-size: 16px; font-weight: 600;">Quy trình hoạt động 3 bước:</p>
+
+                <div class="flow-diagram" style="margin-top: 25px;">
+┌─────────────────────────────────────────────────────────┐
+│  8:45 AM - KHỞI TẠO FORM                               │
+│  ✓ Tạo Notion page mới cho mỗi thành viên               │
+│  ✓ Gửi email chứa link form (câu hỏi standup)          │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│  8:55 AM - NHẮC NHỞ                                     │
+│  ✓ Quét database, tìm ai chưa điền                      │
+│  ✓ Gửi email nhắc nhở tự động                          │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│  9:00 AM - TỔNG HỢP                                     │
+│  ✓ Lấy tất cả dữ liệu đã điền trong ngày               │
+│  ✓ Tạo summary page trên Notion team workspace          │
+│  ✓ Lưu trữ dữ liệu để tra cứu sau                      │
+└─────────────────────────────────────────────────────────┘
+                </div>
+
+                <h3 style="margin-top: 25px;">Template câu hỏi</h3>
+                <ul>
+                    <li>❓ <span class="highlight">Hôm qua làm gì?</span> (Yesterday)</li>
+                    <li>❓ <span class="highlight">Hôm nay làm gì?</span> (Today)</li>
+                    <li>❓ <span class="highlight">Có vướng mắc gì không?</span> (Blockers)</li>
+                </ul>
+            </div>
+
+            <!-- SLIDE 5: Architecture -->
+            <div class="slide">
+                <span class="section-number">SLIDE 4</span>
+                <h2>🏗️ Kiến Trúc Hệ Thống</h2>
+                <div class="flow-diagram" style="margin-top: 20px; font-size: 12px;">
+┌──────────────────────────────────────────────────────┐
+│           FRONTEND (UI ADMIN)                         │
+│  Express.js + HTML/CSS - Dashboard xem log            │
+└──────────────────────────────────────────────────────┘
+                        ↓
+┌──────────────────────────────────────────────────────┐
+│          BACKEND (NODE.JS CORE)                      │
+│                                                       │
+│  SCHEDULER (node-cron):                              │
+│  • 8:45 - triggerMorning()                            │
+│  • 8:55 - triggerReminder()                           │
+│  • 9:00 - triggerSummary()                            │
+│                        ↓                              │
+│  SERVICES LAYER:                                      │
+│  • dailyStandup.js, reminder.js, summary.js           │
+│  • email.js, notion.js, member.js                     │
+│                        ↓                              │
+│  EXTERNAL SERVICES:                                   │
+│  • Notion API (Free Tier)                             │
+│  • SMTP Email Service (Nodemailer)                    │
+└──────────────────────────────────────────────────────┘
+                </div>
+            </div>
+
+            <!-- SLIDE 6: Tech Stack -->
+            <div class="slide">
+                <span class="section-number">SLIDE 5</span>
+                <h2>🔧 Tech Stack</h2>
+                <table style="margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            <th>Thành phần</th>
+                            <th>Công nghệ</th>
+                            <th>Phiên bản</th>
+                            <th>Tác dụng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Runtime</strong></td>
+                            <td>Node.js</td>
+                            <td>≥ 18.0.0</td>
+                            <td>Môi trường chạy</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Web Server</strong></td>
+                            <td>Express.js</td>
+                            <td>^4.19.2</td>
+                            <td>REST API & UI</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Scheduler</strong></td>
+                            <td>node-cron</td>
+                            <td>^3.0.3</td>
+                            <td>Lên lịch cron jobs</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Database API</strong></td>
+                            <td>@notionhq/client</td>
+                            <td>^2.2.15</td>
+                            <td>Kết nối Notion API</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Email</strong></td>
+                            <td>Nodemailer</td>
+                            <td>^6.9.13</td>
+                            <td>Gửi email tự động</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Testing</strong></td>
+                            <td>Jest</td>
+                            <td>^29.7.0</td>
+                            <td>Unit tests</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="success-box" style="margin-top: 25px;">
+                    ✅ <strong>Minimal dependencies</strong> - Giảm dung lượng, tăng bảo mật<br>
+                    ✅ <strong>Free tier đủ dùng</strong> - Notion API & SMTP<br>
+                    ✅ <strong>RAM &lt; 512MB</strong> - Phù hợp VPS nhỏ
+                </div>
+            </div>
+
+            <!-- SLIDE 7: Directory Structure -->
+            <div class="slide">
+                <span class="section-number">SLIDE 6</span>
+                <h2>📁 Cấu Trúc Thư Mục</h2>
+                <div class="code-block" style="margin-top: 20px;">
+standup-bot-notion/
+├── src/
+│   ├── services/          (Notion, Email, Summary logic)
+│   ├── routes/            (Admin dashboard, Triggers)
+│   ├── jobs/              (8:45, 8:55, 9:00 jobs)
+│   ├── scripts/           (Manual trigger scripts)
+│   ├── middleware/        (Authentication)
+│   ├── utils/             (Logger, Validators, Helpers)
+│   └── __tests__/         (Unit & Integration tests)
+├── public/                (Admin UI - HTML/CSS/JS)
+├── data/                  (members.json config)
+├── .env                   (Environment variables)
+└── package.json
+                </div>
+
+                <h3 style="margin-top: 25px;">Các file quan trọng</h3>
+                <ul style="font-size: 15px;">
+                    <li><strong>src/services/notion.js</strong> - Kết nối Notion API</li>
+                    <li><strong>src/services/dailyStandup.js</strong> - Tạo form standup</li>
+                    <li><strong>src/services/reminder.js</strong> - Gửi nhắc nhở</li>
+                    <li><strong>src/services/summary.js</strong> - Tổng hợp dữ liệu</li>
+                    <li><strong>src/services/email.js</strong> - Email service</li>
+                </ul>
+            </div>
+
+            <!-- SLIDE 8: Workflow Detail -->
+            <div class="slide">
+                <span class="section-number">SLIDE 7</span>
+                <h2>🔄 Luồng Hoạt Động Chi Tiết</h2>
+                <div style="margin-top: 20px;">
+                    <h3>⏰ 8:45 AM - KHỞI TẠO FORM</h3>
+                    <div class="code-block">
+1. Lấy danh sách tất cả thành viên
+2. Với mỗi thành viên:
+   ├─ Tạo Notion page mới
+   │  └─ Title: "[STANDUP] {Name} - {Date}"
+   └─ Gửi email với link form
+3. Log status: "pending" → "sent"
+                    </div>
+
+                    <h3>⏰ 8:55 AM - NHẮC NHỞ</h3>
+                    <div class="code-block">
+1. Quét Notion database
+   └─ Find pages với status = "pending"
+2. Với mỗi form chưa điền:
+   └─ Gửi email nhắc nhở
+3. Update reminder_count
+                    </div>
+
+                    <h3>⏰ 9:00 AM - TỔNG HỢP</h3>
+                    <div class="code-block">
+1. Lấy tất cả forms đã điền trong ngày
+2. Xử lý & validate dữ liệu
+3. Tạo Summary Page trên Notion
+4. Archive daily forms
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 9: Database Schema -->
+            <div class="slide">
+                <span class="section-number">SLIDE 8</span>
+                <h2>🔌 Notion Database Schema</h2>
+                <h3 style="margin-top: 25px;">📋 Bảng: Standup Log (Main)</h3>
+                <table style="margin-top: 15px;">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Mô tả</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Name</td>
+                            <td>Text</td>
+                            <td>[STANDUP] {Name} - {Date}</td>
+                        </tr>
+                        <tr>
+                            <td>Date</td>
+                            <td>Date</td>
+                            <td>Ngày standup</td>
+                        </tr>
+                        <tr>
+                            <td>Status</td>
+                            <td>Select</td>
+                            <td>pending / submitted / archived</td>
+                        </tr>
+                        <tr>
+                            <td>Yesterday</td>
+                            <td>Rich Text</td>
+                            <td>Hôm qua làm gì</td>
+                        </tr>
+                        <tr>
+                            <td>Today</td>
+                            <td>Rich Text</td>
+                            <td>Hôm nay làm gì</td>
+                        </tr>
+                        <tr>
+                            <td>Blockers</td>
+                            <td>Rich Text</td>
+                            <td>Vướng mắc gì</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin-top: 20px;">👥 Bảng: Members (Config)</h3>
+                <div class="tip-box">
+                    <strong>Name</strong> | <strong>Email</strong> | <strong>Active</strong> | <strong>Role</strong> (Developer/Manager/Designer)
+                </div>
+
+                <h3 style="margin-top: 20px;">📊 Bảng: Summary (Report)</h3>
+                <div class="tip-box">
+                    <strong>Title</strong> | <strong>Date</strong> | <strong>Total Members</strong> | <strong>Completion Rate</strong> | <strong>Summary Content</strong>
+                </div>
+            </div>
+
+            <!-- SLIDE 10: Features -->
+            <div class="slide">
+                <span class="section-number">SLIDE 9</span>
+                <h2>🚀 Features & Capabilities</h2>
+                <div style="margin-top: 25px;">
+                    <h3>✅ Core Features</h3>
+                    <ul style="font-size: 16px;">
+                        <li>Tự động tạo form standup vào 8:45</li>
+                        <li>Tự động gửi email với form link</li>
+                        <li>Tự động nhắc nhở vào 8:55</li>
+                        <li>Tự động tổng hợp vào 9:00</li>
+                        <li>Lưu trữ dữ liệu trên Notion</li>
+                        <li>Admin dashboard để trigger manual</li>
+                    </ul>
+
+                    <h3>🔒 Tính năng bảo mật</h3>
+                    <ul style="font-size: 16px;">
+                        <li>Environment variable management (.env)</li>
+                        <li>Authentication middleware</li>
+                        <li>Rate limit handling từ Notion API</li>
+                        <li>Input validation & schema checking</li>
+                        <li>Error logging & monitoring</li>
+                    </ul>
+
+                    <h3>📊 Tính năng quản lý</h3>
+                    <ul style="font-size: 16px;">
+                        <li>Trigger manual cron jobs từ dashboard</li>
+                        <li>Xem logs execution history</li>
+                        <li>Quản lý member list</li>
+                        <li>Cấu hình email templates</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- SLIDE 11: Testing -->
+            <div class="slide">
+                <span class="section-number">SLIDE 10</span>
+                <h2>📈 Testing & Quality Assurance</h2>
+                <h3 style="margin-top: 25px;">Test Coverage</h3>
+                <div class="code-block">
+Unit Tests:
+├── notion.service.test.js
+├── email.service.test.js
+├── dailyStandup.service.test.js
+├── reminder.service.test.js
+├── summary.service.test.js
+└── member.service.test.js
+
+Integration Tests:
+├── api.test.js
+└── server.test.js
+                </div>
+
+                <h3 style="margin-top: 20px;">Code Quality Tools</h3>
+                <ul>
+                    <li><strong>ESLint</strong> - Static code analysis</li>
+                    <li><strong>Prettier</strong> - Code formatting</li>
+                    <li><strong>Jest</strong> - Unit testing framework</li>
+                    <li><strong>Coverage</strong> - Test coverage metrics (target: > 80%)</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">Lệnh chạy test</h3>
+                <div class="code-block">
+npm test              # Run all tests with coverage
+npm run test:watch    # Watch mode
+npm run lint          # Run ESLint
+npm run lint:fix      # Auto-fix linting issues
+                </div>
+            </div>
+
+            <!-- SLIDE 12: Setup & Deployment -->
+            <div class="slide">
+                <span class="section-number">SLIDE 11</span>
+                <h2>🔧 Cài Đặt & Deployment</h2>
+                <h3 style="margin-top: 25px;">Prerequisites</h3>
+                <ul>
+                    <li>Node.js ≥ 18.0.0</li>
+                    <li>Notion account + API token</li>
+                    <li>Email SMTP service (Gmail, SendGrid, etc.)</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">Development</h3>
+                <div class="code-block">
+npm install               # Install dependencies
+npm run dev              # Start with nodemon
+npm run trigger:morning  # Test 8:45 job
+npm run trigger:remind   # Test 8:55 job
+npm run trigger:summary  # Test 9:00 job
+                </div>
+
+                <h3 style="margin-top: 20px;">Production</h3>
+                <div class="code-block">
+npm start    # Run production server
+# Or deploy to Railway/Heroku
+                </div>
+
+                <h3 style="margin-top: 20px;">Resource Requirements</h3>
+                <ul>
+                    <li>💾 Memory: &lt; 512MB</li>
+                    <li>⚙️ CPU: Minimal (idle most of time)</li>
+                    <li>📦 Storage: &lt; 100MB</li>
+                    <li>💰 Monthly Cost: &lt; $10 (Railway, Heroku)</li>
+                </ul>
+            </div>
+
+            <!-- SLIDE 13: Admin Dashboard -->
+            <div class="slide">
+                <span class="section-number">SLIDE 12</span>
+                <h2>🎨 Admin Dashboard</h2>
+                <p style="margin-top: 20px;"><strong>Location:</strong> <span class="highlight">http://localhost:3000/admin</span></p>
+
+                <h3 style="margin-top: 25px;">Dashboard Features</h3>
+                <ul>
+                    <li><strong>📊 Dashboard</strong> - Real-time status overview, execution history, member completion</li>
+                    <li><strong>🎮 Manual Controls</strong> - Trigger buttons (8:45, 8:55, 9:00)</li>
+                    <li><strong>📋 Logs & Monitoring</strong> - Real-time execution logs, error tracking, email history</li>
+                    <li><strong>⚙️ Settings</strong> - Member management, email templates, cron config</li>
+                </ul>
+
+                <h3 style="margin-top: 25px;">Design System</h3>
+                <ul>
+                    <li><strong>Inspiration:</strong> Airtable-inspired clean design</li>
+                    <li><strong>Colors:</strong> Deep Navy (#181d26) + Airtable Blue (#1b61c9)</li>
+                    <li><strong>Typography:</strong> Haas font family</li>
+                    <li><strong>Components:</strong> Buttons, cards, tables with professional styling</li>
+                </ul>
+
+                <div class="success-box" style="margin-top: 20px;">
+                    🎨 <strong>Professional & User-friendly</strong> - Easy to use for team managers
+                </div>
+            </div>
+
+            <!-- SLIDE 14: Highlights -->
+            <div class="slide">
+                <span class="section-number">SLIDE 13</span>
+                <h2>✨ Những Đặc Điểm Nổi Bật</h2>
+                <div style="margin-top: 30px;">
+                    <div class="metric-box">
+                        <h4>1️⃣ Hoàn toàn tự động</h4>
+                        <p style="font-size: 15px;">Không cần can thiệp thủ công, setup 1 lần chạy mãi</p>
+                    </div>
+
+                    <div class="metric-box" style="margin-top: 15px;">
+                        <h4>2️⃣ Không cần tool bên ngoài</h4>
+                        <p style="font-size: 15px;">Tất cả dữ liệu lưu trên Notion workspace sẵn có</p>
+                    </div>
+
+                    <div class="metric-box" style="margin-top: 15px;">
+                        <h4>3️⃣ Đơn giản & tiết kiệm</h4>
+                        <p style="font-size: 15px;">Code base nhỏ (< 2000 lines), minimal dependencies, free tier đủ</p>
+                    </div>
+
+                    <div class="metric-box" style="margin-top: 15px;">
+                        <h4>4️⃣ Tin cậy & resilient</h4>
+                        <p style="font-size: 15px;">Error handling, retry logic, comprehensive logging</p>
+                    </div>
+
+                    <div class="metric-box" style="margin-top: 15px;">
+                        <h4>5️⃣ Dễ mở rộng</h4>
+                        <p style="font-size: 15px;">Modular service architecture, clear separation of concerns</p>
+                    </div>
+
+                    <div class="metric-box" style="margin-top: 15px;">
+                        <h4>6️⃣ Bảo mật</h4>
+                        <p style="font-size: 15px;">Environment-based config, no hardcoded secrets, input validation</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 15: Success Metrics -->
+            <div class="slide">
+                <span class="section-number">SLIDE 14</span>
+                <h2>📊 Cáy Thành Công & Kỳ Vọng</h2>
+                <h3 style="margin-top: 25px;">Lợi ích dự kiến</h3>
+                <table style="margin-top: 15px;">
+                    <thead>
+                        <tr>
+                            <th>Khía cạnh</th>
+                            <th>Trước</th>
+                            <th>Sau</th>
+                            <th>Cải thiện</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Thời gian setup</td>
+                            <td>30+ phút/ngày</td>
+                            <td>0 phút</td>
+                            <td class="success">✅ 100%</td>
+                        </tr>
+                        <tr>
+                            <td>Tỷ lệ hoàn thành</td>
+                            <td>70%</td>
+                            <td>95%+</td>
+                            <td class="success">✅ +25%</td>
+                        </tr>
+                        <tr>
+                            <td>Lưu trữ dữ liệu</td>
+                            <td>Rải rác</td>
+                            <td>Tập trung Notion</td>
+                            <td class="success">✅ Dễ tra cứu</td>
+                        </tr>
+                        <tr>
+                            <td>Accuracy</td>
+                            <td>Dễ nhầm lẫn</td>
+                            <td>Standardized</td>
+                            <td class="success">✅ Cao hơn</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin-top: 20px;">Key Metrics to Track</h3>
+                <div class="grid-2" style="margin-top: 15px;">
+                    <div class="metric-box">
+                        <h4>Daily Completion Rate</h4>
+                        <p class="value" style="color: var(--theme-success-green);">> 90%</p>
+                    </div>
+                    <div class="metric-box">
+                        <h4>System Uptime</h4>
+                        <p class="value" style="color: var(--theme-success-green);">> 99%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE 16: Status & Roadmap -->
+            <div class="slide">
+                <span class="section-number">SLIDE 15</span>
+                <h2>🚧 Hiện Trạng & Roadmap</h2>
+                <h3 style="margin-top: 25px;">✅ Đã hoàn thành</h3>
+                <ul style="font-size: 15px;">
+                    <li>Core scheduler (node-cron)</li>
+                    <li>Notion API integration</li>
+                    <li>Email service (Nodemailer)</li>
+                    <li>Daily standup form creation</li>
+                    <li>Reminder system</li>
+                    <li>Summary generation</li>
+                    <li>Admin dashboard (basic)</li>
+                    <li>Error handling & logging</li>
+                    <li>Unit & integration tests</li>
+                    <li>Documentation</li>
+                </ul>
+
+                <h3 style="margin-top: 20px;">📅 Kế hoạch tương lai</h3>
+                <ul style="font-size: 15px;">
+                    <li><strong>Phase 2 (Q2 2026):</strong> Real-time notifications, Slack integration, custom questions</li>
+                    <li><strong>Phase 3 (Q3 2026):</strong> Mobile-friendly UI, data export, analytics dashboard</li>
+                    <li><strong>Phase 4 (Q4 2026):</strong> Multi-workspace support, API integration, SaaS version</li>
+                </ul>
+            </div>
+
+            <!-- SLIDE 17: Risk & Mitigation -->
+            <div class="slide">
+                <span class="section-number">SLIDE 16</span>
+                <h2>🎯 Risk & Mitigation</h2>
+                <table style="margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            <th>Risk</th>
+                            <th>Impact</th>
+                            <th>Mitigation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Notion API downtime</td>
+                            <td>Service fail</td>
+                            <td>Queue system, retry logic</td>
+                        </tr>
+                        <tr>
+                            <td>Email delivery fail</td>
+                            <td>Users miss form</td>
+                            <td>Fallback notification, dashboard link</td>
+                        </tr>
+                        <tr>
+                            <td>Memory leak in node</td>
+                            <td>Server crash</td>
+                            <td>Monitor memory, implement limits</td>
+                        </tr>
+                        <tr>
+                            <td>Rate limit exceeded</td>
+                            <td>API blocks</td>
+                            <td>Exponential backoff</td>
+                        </tr>
+                        <tr>
+                            <td>Data loss</td>
+                            <td>Irreversible</td>
+                            <td>Regular Notion backups</td>
+                        </tr>
+                        <tr>
+                            <td>Security breach</td>
+                            <td>Data leak</td>
+                            <td>Environment security, access control</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin-top: 20px;">Mitigation Strategies</h3>
+                <ul style="font-size: 15px;">
+                    <li>✅ Comprehensive error handling</li>
+                    <li>✅ Retry mechanisms (exponential backoff)</li>
+                    <li>✅ Monitoring & alerting system</li>
+                    <li>✅ Regular data backups</li>
+                    <li>✅ Security audit regularly</li>
+                </ul>
+            </div>
+
+            <!-- SLIDE 18: Business Value -->
+            <div class="slide">
+                <span class="section-number">SLIDE 17</span>
+                <h2>💼 Business Value</h2>
+                <h3 style="margin-top: 25px;">ROI Calculation</h3>
+                <div class="code-block">
+Annual Effort Saved:
+- Manual standup creation:     1 hour/week × 52 = 52 hours
+- Manual reminders:             0.5 hour/week × 52 = 26 hours
+- Manual compilation:           1 hour/week × 52 = 52 hours
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOTAL: 130 hours/year ≈ 3 weeks equivalent
+
+Cost Saved:
+- Labor:                        130 hours × $30/hour = $3,900
+- Tool subscriptions:           $0 (use free tier)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NET SAVING: $3,900/year
+Development Cost: ~$1,000 (one-time)
+Break-even: 3 months ✅
+                </div>
+
+                <h3 style="margin-top: 20px;">Qualitative Benefits</h3>
+                <ul>
+                    <li>📈 <strong>Better visibility</strong> - Centralized team progress tracking</li>
+                    <li>🎯 <strong>Improved accountability</strong> - Automated tracking, transparent metrics</li>
+                    <li>🔍 <strong>Historical insights</strong> - Query past standups by date/person</li>
+                    <li>📊 <strong>Data-driven decisions</strong> - Identify blockers, patterns</li>
+                    <li>⚡ <strong>Team productivity</strong> - Reduce admin overhead</li>
+                </ul>
+            </div>
+
+            <!-- SLIDE 19: Security -->
+            <div class="slide">
+                <span class="section-number">SLIDE 18</span>
+                <h2>🔐 Security & Compliance</h2>
+                <h3 style="margin-top: 25px;">Security Measures</h3>
+                <div class="code-block">
+1. API Authentication
+   ├─ Notion API token in .env (not hardcoded)
+   ├─ SMTP credentials in .env
+   └─ Admin auth middleware on dashboard
+
+2. Data Protection
+   ├─ Input validation on all endpoints
+   ├─ SQL injection prevention
+   ├─ XSS prevention
+   └─ CSRF tokens on admin forms
+
+3. Access Control
+   ├─ Authentication for admin routes
+   ├─ Role-based access (Admin, User)
+   └─ Audit logging of admin actions
+
+4. Infrastructure
+   ├─ HTTPS only for production
+   ├─ Environment isolation (dev/staging/prod)
+   ├─ Dependency scanning (npm audit)
+   └─ Regular security updates
+                </div>
+
+                <h3 style="margin-top: 20px;">Compliance</h3>
+                <ul>
+                    <li>✅ GDPR-ready (no unnecessary personal data)</li>
+                    <li>✅ SOC 2-aligned (audit logs, access control)</li>
+                    <li>✅ No PCI compliance needed (no payment processing)</li>
+                </ul>
+            </div>
+
+            <!-- SLIDE 20: Conclusion -->
+            <div class="slide" style="background: linear-gradient(135deg, #f8fafc 0%, #e8eef5 100%);">
+                <span class="section-number">SLIDE 19</span>
+                <h2 style="border-bottom: 3px solid var(--theme-success-green);">🎉 Kết Luận</h2>
+                <div style="margin-top: 30px;">
+                    <p style="font-size: 18px; line-height: 1.8; margin-bottom: 25px;">
+                        <strong>Standup Bot for Notion</strong> là một giải pháp tự động hoá hoàn toàn cho quy trình standup hằng ngày.
+                    </p>
+
+                    <div class="success-box">
+                        <strong>✅ Giải quyết bài toán</strong> - Tự động hoá từ creation → reminder → summary
+                    </div>
+
+                    <div class="success-box">
+                        <strong>✅ Tiết kiệm chi phí</strong> - Free tier, minimal infra, ROI 3 tháng
+                    </div>
+
+                    <div class="success-box">
+                        <strong>✅ Dễ triển khai</strong> - Setup 1 lần, chạy tự động theo lịch
+                    </div>
+
+                    <div class="success-box">
+                        <strong>✅ Dễ mở rộng</strong> - Modular architecture, sẵn sàng cho features mới
+                    </div>
+
+                    <div class="success-box">
+                        <strong>✅ Bảo mật tốt</strong> - Proper handling of secrets, audit logs
+                    </div>
+
+                    <h3 style="margin-top: 30px;">🚀 Sẵn sàng triển khai ngay</h3>
+                </div>
+            </div>
+
+            <!-- SLIDE 21: Contact -->
+            <div class="slide">
+                <span class="section-number">SLIDE 20</span>
+                <h2>📞 Contact & Resources</h2>
+                <div style="margin-top: 30px;">
+                    <h3>Project Links</h3>
+                    <ul>
+                        <li><strong>Repository:</strong> GitHub repository link</li>
+                        <li><strong>Documentation:</strong> README.md, CLAUDE.md, QUICK_START.md</li>
+                        <li><strong>Demo Dashboard:</strong> http://localhost:3000/admin (after setup)</li>
+                    </ul>
+
+                    <h3 style="margin-top: 25px;">Contact Information</h3>
+                    <ul>
+                        <li><strong>Team Lead:</strong> an.nguyen@nexlab.tech</li>
+                        <li><strong>Support Email:</strong> support@nexlab.tech</li>
+                        <li><strong>Slack Channel:</strong> #standup-bot (internal)</li>
+                    </ul>
+
+                    <h3 style="margin-top: 25px;">Useful Links</h3>
+                    <ul style="font-size: 15px;">
+                        <li>Notion API Docs: https://developers.notion.com</li>
+                        <li>node-cron Docs: https://www.npmjs.com/package/node-cron</li>
+                        <li>Express.js Docs: https://expressjs.com</li>
+                        <li>Nodemailer Docs: https://nodemailer.com</li>
+                    </ul>
+
+                    <h3 style="margin-top: 25px;">Version Info</h3>
+                    <ul>
+                        <li><strong>Version:</strong> 1.0.0</li>
+                        <li><strong>Last Updated:</strong> April 2026</li>
+                        <li><strong>Node.js Required:</strong> ≥ 18.0.0</li>
+                        <li><strong>Status:</strong> <span class="success">Production Ready ✅</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- SLIDE 22: Thank You -->
+            <div class="slide title-slide">
+                <h1 style="font-size: 72px; margin-bottom: 50px;">Cảm ơn! 🙏</h1>
+                <p style="font-size: 28px; margin-bottom: 40px;">Hỏi & Trả lời</p>
+                <div style="margin-top: 80px; text-align: center;">
+                    <p style="font-size: 18px; opacity: 0.9;">📧 an.nguyen@nexlab.tech</p>
+                    <p style="margin-top: 10px; opacity: 0.8; font-size: 14px;">Made with ❤️ by Nexlab Team</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="button-group">
+                <button id="prevBtn" onclick="previousSlide()">← Slide Trước</button>
+                <button id="nextBtn" onclick="nextSlide()">Slide Sau →</button>
+            </div>
+            <div class="slide-counter">
+                <span id="slideNumber">1</span> / <span id="totalSlides">22</span>
+                <div class="keyboard-hints" style="margin-top: 5px; font-size: 11px;">
+                    Use ← → or Space to navigate
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+                <button class="fullscreen-btn" onclick="jumpToSlide()">Go to Slide</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = document.querySelectorAll('.slide').length;
+        document.getElementById('totalSlides').textContent = totalSlides;
+
+        function showSlide(n) {
+            const slides = document.querySelectorAll('.slide');
+
+            if (n > totalSlides) {
+                currentSlide = totalSlides;
+            }
+            if (n < 1) {
+                currentSlide = 1;
+            }
+
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[currentSlide - 1].classList.add('active');
+
+            document.getElementById('slideNumber').textContent = currentSlide;
+            document.getElementById('prevBtn').disabled = currentSlide === 1;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides;
+
+            // Update progress bar
+            const progress = (currentSlide / totalSlides) * 100;
+            const progressFill = document.querySelector('.progress-fill');
+            if (progressFill) {
+                progressFill.style.width = progress + '%';
+            }
+        }
+
+        function nextSlide() {
+            currentSlide++;
+            showSlide(currentSlide);
+        }
+
+        function previousSlide() {
+            currentSlide--;
+            showSlide(currentSlide);
+        }
+
+        function jumpToSlide() {
+            const slideNum = prompt(`Nhập số slide (1-${totalSlides}):`);
+            if (slideNum && slideNum > 0 && slideNum <= totalSlides) {
+                currentSlide = parseInt(slideNum);
+                showSlide(currentSlide);
+            }
+        }
+
+        function toggleFullscreen() {
+            const elem = document.querySelector('.slides-wrapper');
+            if (!document.fullscreenElement) {
+                elem.requestFullscreen().catch(err => {
+                    alert(`Không thể vào fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight' || event.key === ' ') {
+                event.preventDefault();
+                nextSlide();
+            } else if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                previousSlide();
+            }
+        });
+
+        // Initialize
+        showSlide(currentSlide);
+    </script>
+</body>
+</html>

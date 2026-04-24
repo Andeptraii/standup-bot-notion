@@ -1,0 +1,38 @@
+name: Test & Lint
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+        env:
+          NOTION_API_KEY: test_key
+          NOTION_STANDUP_DB_ID: test_db_id
+          NOTION_SUMMARY_PAGE_ID: test_page_id
+          ADMIN_TOKEN: test_token
+          SMTP_HOST: smtp.test.com
+          SMTP_PORT: '587'
+          SMTP_USER: test@test.com
+          SMTP_PASS: testpass

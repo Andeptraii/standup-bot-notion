@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Standup Bot Admin Dashboard" />
+    <title>Standup Bot — Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- HEADER -->
+      <header class="page-header">
+        <h1>Standup Bot</h1>
+        <span class="page-label">Admin Dashboard</span>
+      </header>
+
+      <!-- ALERT AREA -->
+      <div id="alert-area"></div>
+
+      <!-- SECTION: AUTHENTICATION -->
+      <section class="card">
+        <h2 class="card-title">Authentication</h2>
+        <div class="card-content">
+          <div class="form-group" style="max-width: 500px;">
+            <label class="form-label" for="adminToken">Admin Token</label>
+            <div class="flex gap-sm">
+              <input
+                type="password"
+                id="adminToken"
+                class="form-control"
+                placeholder="Enter ADMIN_TOKEN"
+                autocomplete="off"
+                style="flex: 1;"
+              />
+              <button class="btn btn-small" onclick="toggleToken()">
+                <svg class="icon-small" viewBox="0 0 24 24">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Show
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: MANUAL TRIGGERS -->
+      <section class="card">
+        <h2 class="card-title">Manual Triggers</h2>
+        <div class="card-content">
+          <p class="text-muted" style="margin-bottom: var(--spacing-lg);">
+            Manually execute scheduled jobs for testing. Enter your admin token above first.
+          </p>
+          <div class="button-group">
+            <button
+              class="btn btn-large btn-block"
+              onclick="triggerAction('standup')"
+            >
+              <svg class="icon" viewBox="0 0 24 24">
+                <path d="M9 11l3 3L22 4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Create Standup (8:45)
+            </button>
+            <button
+              class="btn btn-large btn-block"
+              onclick="triggerAction('remind')"
+            >
+              <svg class="icon" viewBox="0 0 24 24">
+                <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+              </svg>
+              Send Reminder (8:55)
+            </button>
+            <button
+              class="btn btn-large btn-block"
+              onclick="triggerAction('summary')"
+            >
+              <svg class="icon" viewBox="0 0 24 24">
+                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Generate Summary (9:00)
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: STANDUP SUMMARY -->
+      <section class="card">
+        <h2 class="card-title">Standup Summary</h2>
+        <div class="card-content">
+          <p class="text-muted" style="margin-bottom: var(--spacing-lg);">
+            View standup summary for a specific date. Select a date and click "Load Summary" to display the team's standup data.
+          </p>
+          <div class="flex gap-md" style="margin-bottom: var(--spacing-lg);">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label class="form-label" for="summaryDate">Date</label>
+              <input
+                type="date"
+                id="summaryDate"
+                class="form-control"
+              />
+            </div>
+            <button class="btn btn-large" onclick="loadSummary()" style="align-self: flex-end; margin-bottom: var(--spacing-md);">
+              <svg class="icon" viewBox="0 0 24 24">
+                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Load Summary
+            </button>
+          </div>
+          <div id="summaryResult" class="mt-md">
+            <p class="text-muted">Select a date and click "Load Summary" to view the data.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: MEMBERS MANAGEMENT -->
+      <section class="card">
+        <h2 class="card-title">Members Management</h2>
+        <div class="card-content">
+          <!-- Existing Members List -->
+          <div style="margin-bottom: var(--spacing-xl);">
+            <div class="flex-between" style="margin-bottom: var(--spacing-md);">
+              <h3>Current Members</h3>
+              <button class="btn btn-small" onclick="loadMembers()">
+                <svg class="icon-small" viewBox="0 0 24 24">
+                  <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Refresh
+              </button>
+            </div>
+            <div id="membersList" class="mt-md">
+              <p class="text-muted">Enter token and click "Refresh" to load members.</p>
+            </div>
+          </div>
+
+          <hr class="hr" />
+
+          <!-- Add New Member -->
+          <div style="margin-top: var(--spacing-xl);">
+            <h3 style="margin-bottom: var(--spacing-md);">Add New Member</h3>
+            <div class="grid grid-3">
+              <div class="form-group">
+                <label class="form-label" for="newName">Name</label>
+                <input
+                  type="text"
+                  id="newName"
+                  class="form-control"
+                  placeholder="Full name"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="newEmail">Email</label>
+                <input
+                  type="email"
+                  id="newEmail"
+                  class="form-control"
+                  placeholder="user@example.com"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="newNotionId">Notion User ID</label>
+                <input
+                  type="text"
+                  id="newNotionId"
+                  class="form-control"
+                  placeholder="Notion ID"
+                />
+              </div>
+            </div>
+            <button class="btn btn-large btn-block" onclick="addMember()" style="margin-top: var(--spacing-md);">
+              <svg class="icon" viewBox="0 0 24 24">
+                <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Add Member
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer style="text-align: center; color: var(--theme_text-weak); font-size: 14px; margin-top: var(--spacing-2xl); padding-top: var(--spacing-lg); border-top: var(--border-width) solid var(--theme_border);">
+        <p>Standup Bot Admin Dashboard • Powered by Notion API</p>
+      </footer>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="app.js"></script>
+  </body>
+</html>
