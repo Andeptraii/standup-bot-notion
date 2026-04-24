@@ -8,7 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
       - name: Checkout code
@@ -18,6 +17,13 @@ jobs:
         run: npm install -g @railway/cli
 
       - name: Deploy to Railway
+        run: |
+          echo "Deploying to Railway..."
+          railway up
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Set Environment Variables
         run: |
           railway link --project ${{ secrets.RAILWAY_PROJECT_ID }} --environment production
           railway variable set \
@@ -31,7 +37,7 @@ jobs:
             SMTP_FROM="${{ secrets.SMTP_FROM }}" \
             ADMIN_TOKEN="${{ secrets.ADMIN_TOKEN }}" \
             TZ="${{ secrets.TZ }}"
-          railway up --detach
+          railway service redeploy --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
