@@ -4,8 +4,12 @@ const { MemberService, MemberValidationError } = require('../services/member');
 const router = express.Router();
 
 router.get('/', (_req, res) => {
-  const members = MemberService.getMembers();
-  res.json(members);
+  try {
+    const members = MemberService.getMembers();
+    res.json(members);
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi khi tải danh sách members' });
+  }
 });
 
 router.post('/', (req, res) => {
@@ -34,9 +38,13 @@ router.put('/:notionId', (req, res) => {
 });
 
 router.delete('/:notionId', (req, res) => {
-  const removed = MemberService.removeMember(req.params.notionId);
-  if (!removed) return res.status(404).json({ error: 'Không tìm thấy member' });
-  res.status(204).send();
+  try {
+    const removed = MemberService.removeMember(req.params.notionId);
+    if (!removed) return res.status(404).json({ error: 'Không tìm thấy member' });
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi khi xoá member' });
+  }
 });
 
 module.exports = router;

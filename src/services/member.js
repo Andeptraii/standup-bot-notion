@@ -26,11 +26,23 @@ function validateMember(data) {
 
 function readMembers() {
   try {
+    // Kiểm tra thư mục tồn tại
+    const dir = path.dirname(MEMBERS_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Kiểm tra file tồn tại
+    if (!fs.existsSync(MEMBERS_FILE)) {
+      return [];
+    }
+
     const raw = fs.readFileSync(MEMBERS_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed;
-  } catch {
+  } catch (err) {
+    console.error('Lỗi đọc members file:', err);
     return [];
   }
 }
