@@ -50,11 +50,16 @@ function readMembers() {
 }
 
 function writeMembers(members) {
-  const dir = path.dirname(MEMBERS_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  try {
+    const dir = path.dirname(MEMBERS_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(MEMBERS_FILE, JSON.stringify(members, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Lỗi ghi members file:', err);
+    throw err;
   }
-  fs.writeFileSync(MEMBERS_FILE, JSON.stringify(members, null, 2), 'utf-8');
 }
 
 const MemberService = {
