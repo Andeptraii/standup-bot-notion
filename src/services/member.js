@@ -1,9 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const MEMBERS_FILE = process.env.NODE_ENV === 'production'
-  ? '/railway/data/members.json'
-  : path.join(__dirname, '..', '..', 'data', 'members.json');
+const MEMBERS_FILE = process.env.MEMBERS_FILE_PATH || (
+  process.env.NODE_ENV === 'production'
+    ? '/data/members.json'
+    : path.join(__dirname, '..', '..', 'data', 'members.json')
+);
 
 class MemberValidationError extends Error {
   constructor(message) {
