@@ -1,11 +1,31 @@
 const fs = require('fs');
 const path = require('path');
 
-const MEMBERS_FILE = process.env.MEMBERS_FILE_PATH || (
-  process.env.NODE_ENV === 'production'
-    ? '/data/members.json'
-    : path.join(__dirname, '..', '..', 'data', 'members.json')
-);
+// Determine the best writable path for members file
+function getWritablePath() {
+  const primaryPath = process.env.MEMBERS_FILE_PATH || (
+    process.env.NODE_ENV === 'production'
+      ? '/data/members.json'
+      : path.join(__dirname, '..', '..', 'data', 'members.json')
+  );
+
+  // Check if primary path is writable
+  try {
+    const dir = path.dirname(primaryPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    // Test write permission
+    fs.accessSync(dir, fs.constants.W_OK);
+    return primaryPath;
+  } catch (err) {
+    // Fallback to temp directory if primary path is not writable
+    console.warn(`Primary path not writable: ${primaryPath}, using /tmp fallback`);
+    return '/tmp/members.json';
+  }
+}
+
+const MEMBERS_FILE = getWritablePath();
 
 class MemberValidationError extends Error {
   constructor(message) {
