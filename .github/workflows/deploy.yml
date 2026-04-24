@@ -19,8 +19,7 @@ jobs:
 
       - name: Deploy to Railway
         run: |
-          railway link --project ${{ secrets.RAILWAY_PROJECT_ID }} --environment production --yes
-          railway service link --yes
+          railway link --project ${{ secrets.RAILWAY_PROJECT_ID }} --environment production
           railway variable set \
             NOTION_API_KEY="${{ secrets.NOTION_API_KEY }}" \
             NOTION_STANDUP_DB_ID="${{ secrets.NOTION_STANDUP_DB_ID }}" \
