@@ -26,6 +26,7 @@ function getWritablePath() {
 }
 
 const MEMBERS_FILE = getWritablePath();
+console.info(`[MemberService] Sử dụng file: ${MEMBERS_FILE}`);
 
 class MemberValidationError extends Error {
   constructor(message) {

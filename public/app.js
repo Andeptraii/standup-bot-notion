@@ -53,7 +53,21 @@ async function triggerAction(action) {
     showAlert(`Executing: ${labels[action]}...`, 'info');
     const data = await apiFetch(`/api/trigger/${action}`, 'POST');
     if (!data) return;
-    showAlert(`✓ ${labels[action]} completed successfully`, 'success');
+
+    // Show detailed result for reminder action
+    if (action === 'remind' && data.result) {
+      const { unfilled, success, failed, skipped } = data.result;
+      let message = `✓ ${labels[action]}: Found ${unfilled} unfilled`;
+      if (unfilled > 0) {
+        message += `, sent ${success} emails`;
+        if (failed > 0) message += ` (${failed} failed)`;
+        if (skipped > 0) message += `, ${skipped} skipped`;
+      }
+      const alertType = (success === 0 && unfilled > 0) ? 'warning' : 'success';
+      showAlert(message, alertType);
+    } else {
+      showAlert(`✓ ${labels[action]} completed successfully`, 'success');
+    }
     console.log('Result:', data);
   } catch (err) {
     showAlert(`Error: ${err.message}`, 'danger');

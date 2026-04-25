@@ -7,6 +7,11 @@ const logger = require('../utils/logger');
 async function checkAndRemind(date = new Date()) {
   const notion = getNotionService();
   const dbId = process.env.NOTION_STANDUP_DB_ID;
+
+  if (!dbId) {
+    throw new Error('NOTION_STANDUP_DB_ID chưa được cấu hình');
+  }
+
   const dateStr = formatDate(date);
 
   const response = await notion.queryDatabase(dbId, {
@@ -19,17 +24,21 @@ async function checkAndRemind(date = new Date()) {
   const unfilledPages = response.results;
   logger.info(`Tìm thấy ${unfilledPages.length} standup chưa điền`, { date: dateStr });
 
-  const remindedCount = { success: 0, failed: 0 };
+  const remindedCount = { success: 0, failed: 0, skipped: 0 };
 
   for (const page of unfilledPages) {
     const assigneeProp = page.properties?.Assignee?.people;
-    if (!assigneeProp || assigneeProp.length === 0) continue;
+    if (!assigneeProp || assigneeProp.length === 0) {
+      remindedCount.skipped++;
+      continue;
+    }
 
     const notionUserId = assigneeProp[0].id;
     const member = MemberService.getMemberByNotionId(notionUserId);
 
     if (!member) {
       logger.warn(`Không tìm thấy member với notionId ${notionUserId}`);
+      remindedCount.skipped++;
       continue;
     }
 
