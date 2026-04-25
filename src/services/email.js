@@ -1,4 +1,3 @@
-const nodemailer = require('nodemailer');
 const logger = require('../utils/logger');
 
 class EmailServiceError extends Error {
@@ -9,28 +8,39 @@ class EmailServiceError extends Error {
   }
 }
 
-function createTransport() {
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-
-  if (!smtpHost || !smtpUser || !smtpPass) {
-    const missing = [];
-    if (!smtpHost) missing.push('SMTP_HOST');
-    if (!smtpUser) missing.push('SMTP_USER');
-    if (!smtpPass) missing.push('SMTP_PASS');
-    throw new Error(`SMTP config chưa đầy đủ: ${missing.join(', ')}`);
+async function sendBrevoEmail({ to, toName, subject, html }) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
+    throw new Error('BREVO_API_KEY chưa được cấu hình');
   }
 
-  return nodemailer.createTransport({
-    host: smtpHost,
-    port: parseInt(process.env.SMTP_PORT || '587', 10),
-    secure: process.env.SMTP_PORT === '465',
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
+  const sender = {
+    email: process.env.SMTP_FROM_EMAIL || 'bot@nexlab.tech',
+    name: process.env.SMTP_FROM_NAME || 'Standup Bot',
+  };
+
+  const body = JSON.stringify({
+    sender,
+    to: [{ email: to, name: toName }],
+    subject,
+    htmlContent: html,
   });
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': apiKey,
+    },
+    body,
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`Brevo API lỗi ${res.status}: ${errBody}`);
+  }
+
+  return res.json();
 }
 
 function morningTemplate(name, pageLink) {
@@ -113,38 +123,24 @@ function reminderTemplate(name, pageLink) {
 }
 
 const EmailService = {
-  _getTransport: createTransport,
-
   async sendMorningInvite(email, name, pageLink) {
-    const transport = EmailService._getTransport();
     const { subject, html } = morningTemplate(name, pageLink);
     try {
-      await transport.sendMail({
-        from: process.env.SMTP_FROM || 'Standup Bot <bot@nexlab.tech>',
-        to: email,
-        subject,
-        html,
-      });
-      logger.info(`Gửi email mời standup thành công`, { email, name });
+      await sendBrevoEmail({ to: email, toName: name, subject, html });
+      logger.info(`Gửi email mời standup thành công tới ${email}`);
     } catch (err) {
-      logger.error(`Gửi email mời standup thất bại: ${err.message} [code=${err.code}] [response=${err.response}] [to=${email}]`);
+      logger.error(`Gửi email mời standup thất bại: ${err.message} [to=${email}]`);
       throw new EmailServiceError(`Không thể gửi email cho ${email}`, err);
     }
   },
 
   async sendReminder(email, name, pageLink) {
-    const transport = EmailService._getTransport();
     const { subject, html } = reminderTemplate(name, pageLink);
     try {
-      await transport.sendMail({
-        from: process.env.SMTP_FROM || 'Standup Bot <bot@nexlab.tech>',
-        to: email,
-        subject,
-        html,
-      });
+      await sendBrevoEmail({ to: email, toName: name, subject, html });
       logger.info(`Gửi email nhắc nhở thành công tới ${email}`);
     } catch (err) {
-      logger.error(`Gửi email nhắc nhở thất bại: ${err.message} [code=${err.code}] [response=${err.response}] [to=${email}]`);
+      logger.error(`Gửi email nhắc nhở thất bại: ${err.message} [to=${email}]`);
       throw new EmailServiceError(`Không thể gửi email cho ${email}`, err);
     }
   },
