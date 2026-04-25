@@ -8,9 +8,6 @@ RUN npm ci --omit=dev
 COPY src ./src
 COPY public ./public
 COPY data ./data
-COPY entrypoint.sh ./entrypoint.sh
-
-RUN chmod +x ./entrypoint.sh
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
