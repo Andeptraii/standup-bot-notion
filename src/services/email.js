@@ -127,8 +127,7 @@ const EmailService = {
       });
       logger.info(`Gửi email mời standup thành công`, { email, name });
     } catch (err) {
-      const errorDetail = { email, error: err.message, code: err.code, response: err.response };
-      logger.error(`Gửi email mời standup thất bại`, errorDetail);
+      logger.error(`Gửi email mời standup thất bại: ${err.message} [code=${err.code}] [response=${err.response}] [to=${email}]`);
       throw new EmailServiceError(`Không thể gửi email cho ${email}`, err);
     }
   },
@@ -143,10 +142,9 @@ const EmailService = {
         subject,
         html,
       });
-      logger.info(`Gửi email nhắc nhở thành công`, { email, name });
+      logger.info(`Gửi email nhắc nhở thành công tới ${email}`);
     } catch (err) {
-      const errorDetail = { email, error: err.message, code: err.code, response: err.response };
-      logger.error(`Gửi email nhắc nhở thất bại`, errorDetail);
+      logger.error(`Gửi email nhắc nhở thất bại: ${err.message} [code=${err.code}] [response=${err.response}] [to=${email}]`);
       throw new EmailServiceError(`Không thể gửi email cho ${email}`, err);
     }
   },

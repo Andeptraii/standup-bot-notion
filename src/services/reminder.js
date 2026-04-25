@@ -22,37 +22,40 @@ async function checkAndRemind(date = new Date()) {
   });
 
   const unfilledPages = response.results;
-  logger.info(`Tìm thấy ${unfilledPages.length} standup chưa điền`, { date: dateStr });
+  logger.info(`Tìm thấy ${unfilledPages.length} standup chưa điền cho ngày ${dateStr}`);
 
   const remindedCount = { success: 0, failed: 0, skipped: 0 };
 
   for (const page of unfilledPages) {
     const assigneeProp = page.properties?.Assignee?.people;
     if (!assigneeProp || assigneeProp.length === 0) {
+      logger.warn(`Standup page ${page.id} không có assignee, bỏ qua`);
       remindedCount.skipped++;
       continue;
     }
 
     const notionUserId = assigneeProp[0].id;
+    logger.info(`Đang tìm member với notionId: ${notionUserId}`);
     const member = await MemberService.getMemberByNotionId(notionUserId);
 
     if (!member) {
-      logger.warn(`Không tìm thấy member với notionId ${notionUserId}`);
+      logger.warn(`Không tìm thấy member với notionId ${notionUserId} trong Notion Members DB`);
       remindedCount.skipped++;
       continue;
     }
 
+    logger.info(`Tìm thấy member: ${member.name} (${member.email}), đang gửi reminder...`);
     try {
       await EmailService.sendReminder(member.email, member.name, page.url);
       remindedCount.success++;
-      logger.info(`Đã nhắc nhở ${member.name}`, { pageId: page.id });
+      logger.info(`Đã nhắc nhở ${member.name} thành công`);
     } catch (err) {
       remindedCount.failed++;
-      logger.error(`Nhắc nhở thất bại cho ${member.name}`, { error: err.message });
+      logger.error(`Nhắc nhở thất bại cho ${member.name}: ${err.message}`);
     }
   }
 
-  logger.info('Hoàn thành kiểm tra và nhắc nhở', remindedCount);
+  logger.info(`Hoàn thành: unfilled=${unfilledPages.length} success=${remindedCount.success} failed=${remindedCount.failed} skipped=${remindedCount.skipped}`);
   return { date: dateStr, unfilled: unfilledPages.length, ...remindedCount };
 }
 
