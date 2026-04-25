@@ -10,13 +10,25 @@ class EmailServiceError extends Error {
 }
 
 function createTransport() {
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    const missing = [];
+    if (!smtpHost) missing.push('SMTP_HOST');
+    if (!smtpUser) missing.push('SMTP_USER');
+    if (!smtpPass) missing.push('SMTP_PASS');
+    throw new Error(`SMTP config chưa đầy đủ: ${missing.join(', ')}`);
+  }
+
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
+    host: smtpHost,
     port: parseInt(process.env.SMTP_PORT || '587', 10),
     secure: process.env.SMTP_PORT === '465',
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: smtpUser,
+      pass: smtpPass,
     },
   });
 }
@@ -115,7 +127,8 @@ const EmailService = {
       });
       logger.info(`Gửi email mời standup thành công`, { email, name });
     } catch (err) {
-      logger.error(`Gửi email mời standup thất bại`, { email, error: err.message });
+      const errorDetail = { email, error: err.message, code: err.code, response: err.response };
+      logger.error(`Gửi email mời standup thất bại`, errorDetail);
       throw new EmailServiceError(`Không thể gửi email cho ${email}`, err);
     }
   },
@@ -132,7 +145,8 @@ const EmailService = {
       });
       logger.info(`Gửi email nhắc nhở thành công`, { email, name });
     } catch (err) {
-      logger.error(`Gửi email nhắc nhở thất bại`, { email, error: err.message });
+      const errorDetail = { email, error: err.message, code: err.code, response: err.response };
+      logger.error(`Gửi email nhắc nhở thất bại`, errorDetail);
       throw new EmailServiceError(`Không thể gửi email cho ${email}`, err);
     }
   },
