@@ -19,9 +19,17 @@ function getWritablePath() {
     fs.accessSync(dir, fs.constants.W_OK);
     return primaryPath;
   } catch (err) {
-    // Fallback to temp directory if primary path is not writable
-    console.warn(`Primary path not writable: ${primaryPath}, using /tmp fallback`);
-    return '/tmp/members.json';
+    // In production, fail fast if /data is not writable (Railway persistent volume issue)
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        `Persistent volume /data không writable. Chi tiết: ${err.message}\n` +
+        'Kiểm tra Railway volume mounting hoặc permissions.'
+      );
+    }
+    // In development, fallback to local data directory
+    const devPath = path.join(__dirname, '..', '..', 'data', 'members.json');
+    console.warn(`Primary path not writable, using dev fallback: ${devPath}`);
+    return devPath;
   }
 }
 
