@@ -33,7 +33,7 @@ async function generateDailyPages(date = new Date()) {
   const notion = getNotionService();
   const dbId = process.env.NOTION_STANDUP_DB_ID;
   const dateStr = formatDate(date);
-  const members = MemberService.getMembers();
+  const members = await MemberService.getMembers();
 
   if (members.length === 0) {
     logger.warn('Không có member nào trong danh sách, bỏ qua tạo standup pages');

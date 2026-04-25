@@ -34,7 +34,7 @@ async function checkAndRemind(date = new Date()) {
     }
 
     const notionUserId = assigneeProp[0].id;
-    const member = MemberService.getMemberByNotionId(notionUserId);
+    const member = await MemberService.getMemberByNotionId(notionUserId);
 
     if (!member) {
       logger.warn(`Không tìm thấy member với notionId ${notionUserId}`);

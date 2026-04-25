@@ -4,9 +4,9 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
-router.get('/', (_req, res) => {
+router.get('/', async (_req, res) => {
   try {
-    const members = MemberService.getMembers();
+    const members = await MemberService.getMembers();
     res.json(members);
   } catch (err) {
     logger.error('GET /api/members failed', { error: err.message });
@@ -14,9 +14,9 @@ router.get('/', (_req, res) => {
   }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const member = MemberService.addMember(req.body);
+    const member = await MemberService.addMember(req.body);
     res.status(201).json(member);
   } catch (err) {
     if (err instanceof MemberValidationError) {
@@ -27,9 +27,9 @@ router.post('/', (req, res) => {
   }
 });
 
-router.put('/:notionId', (req, res) => {
+router.put('/:notionId', async (req, res) => {
   try {
-    const updated = MemberService.updateMember(req.params.notionId, req.body);
+    const updated = await MemberService.updateMember(req.params.notionId, req.body);
     if (!updated) return res.status(404).json({ error: 'Không tìm thấy member' });
     res.json(updated);
   } catch (err) {
@@ -41,9 +41,9 @@ router.put('/:notionId', (req, res) => {
   }
 });
 
-router.delete('/:notionId', (req, res) => {
+router.delete('/:notionId', async (req, res) => {
   try {
-    const removed = MemberService.removeMember(req.params.notionId);
+    const removed = await MemberService.removeMember(req.params.notionId);
     if (!removed) return res.status(404).json({ error: 'Không tìm thấy member' });
     res.status(204).send();
   } catch (err) {

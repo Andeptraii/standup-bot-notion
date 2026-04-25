@@ -1,40 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-
-// Determine the best writable path for members file
-function getWritablePath() {
-  const primaryPath = process.env.MEMBERS_FILE_PATH || (
-    process.env.NODE_ENV === 'production'
-      ? '/data/members.json'
-      : path.join(__dirname, '..', '..', 'data', 'members.json')
-  );
-
-  // Check if primary path is writable
-  try {
-    const dir = path.dirname(primaryPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    // Test write permission
-    fs.accessSync(dir, fs.constants.W_OK);
-    return primaryPath;
-  } catch (err) {
-    // In production, fail fast if /data is not writable (Railway persistent volume issue)
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(
-        `Persistent volume /data không writable. Chi tiết: ${err.message}\n` +
-        'Kiểm tra Railway volume mounting hoặc permissions.'
-      );
-    }
-    // In development, fallback to local data directory
-    const devPath = path.join(__dirname, '..', '..', 'data', 'members.json');
-    console.warn(`Primary path not writable, using dev fallback: ${devPath}`);
-    return devPath;
-  }
-}
-
-const MEMBERS_FILE = getWritablePath();
-console.info(`[MemberService] Sử dụng file: ${MEMBERS_FILE}`);
+const { getNotionService } = require('./notion');
+const logger = require('../utils/logger');
 
 class MemberValidationError extends Error {
   constructor(message) {
@@ -55,91 +20,157 @@ function validateMember(data) {
   }
 }
 
-function readMembers() {
-  try {
-    // Kiểm tra thư mục tồn tại
-    const dir = path.dirname(MEMBERS_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+function pageToMember(page) {
+  const props = page.properties;
+  const name = props.Name?.title?.[0]?.plain_text || '';
+  const email = props.Email?.email || '';
+  const notionId = props.NotionId?.rich_text?.[0]?.plain_text || '';
 
-    // Kiểm tra file tồn tại
-    if (!fs.existsSync(MEMBERS_FILE)) {
-      return [];
-    }
-
-    const raw = fs.readFileSync(MEMBERS_FILE, 'utf-8');
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch (err) {
-    console.error('Lỗi đọc members file:', err);
-    return [];
+  if (!name || !email || !notionId) {
+    logger.warn('Bỏ qua member có properties không đầy đủ', { pageId: page.id });
+    return null;
   }
-}
 
-function writeMembers(members) {
-  try {
-    const dir = path.dirname(MEMBERS_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(MEMBERS_FILE, JSON.stringify(members, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Lỗi ghi members file:', err);
-    throw err;
-  }
+  return { name, email, notionId, pageId: page.id };
 }
 
 const MemberService = {
-  getMembers() {
-    return readMembers();
-  },
+  async getMembers() {
+    try {
+      const notion = getNotionService();
+      const dbId = process.env.NOTION_MEMBERS_DB_ID;
 
-  getMemberByNotionId(notionId) {
-    const members = readMembers();
-    return members.find((m) => m.notionId === notionId) || null;
-  },
+      if (!dbId) {
+        throw new MemberValidationError('NOTION_MEMBERS_DB_ID chưa được cấu hình');
+      }
 
-  getMemberByEmail(email) {
-    const members = readMembers();
-    return members.find((m) => m.email === email) || null;
-  },
+      const response = await notion.queryDatabase(dbId);
+      const members = response.results
+        .filter((page) => !page.archived)
+        .map((page) => pageToMember(page))
+        .filter((m) => m !== null);
 
-  addMember(data) {
-    validateMember(data);
-    const members = readMembers();
-    if (members.find((m) => m.notionId === data.notionId)) {
-      throw new MemberValidationError(`Member với notionId "${data.notionId}" đã tồn tại`);
+      return members;
+    } catch (err) {
+      logger.error('Lỗi lấy members từ Notion', { error: err.message });
+      return [];
     }
-    const newMember = {
-      name: data.name.trim(),
-      email: data.email.trim().toLowerCase(),
-      notionId: data.notionId.trim(),
-    };
-    members.push(newMember);
-    writeMembers(members);
-    return newMember;
   },
 
-  removeMember(notionId) {
-    const members = readMembers();
-    const index = members.findIndex((m) => m.notionId === notionId);
-    if (index === -1) return false;
-    members.splice(index, 1);
-    writeMembers(members);
-    return true;
+  async getMemberByNotionId(notionId) {
+    try {
+      const members = await this.getMembers();
+      return members.find((m) => m.notionId === notionId) || null;
+    } catch (err) {
+      logger.error('Lỗi tìm member theo notionId', { notionId, error: err.message });
+      return null;
+    }
   },
 
-  updateMember(notionId, updates) {
-    const members = readMembers();
-    const index = members.findIndex((m) => m.notionId === notionId);
-    if (index === -1) return null;
-    const updated = { ...members[index], ...updates, notionId };
-    validateMember(updated);
-    members[index] = updated;
-    writeMembers(members);
-    return updated;
+  async getMemberByEmail(email) {
+    try {
+      const members = await this.getMembers();
+      return members.find((m) => m.email === email) || null;
+    } catch (err) {
+      logger.error('Lỗi tìm member theo email', { email, error: err.message });
+      return null;
+    }
+  },
+
+  async addMember(data) {
+    try {
+      validateMember(data);
+
+      const notion = getNotionService();
+      const dbId = process.env.NOTION_MEMBERS_DB_ID;
+
+      if (!dbId) {
+        throw new MemberValidationError('NOTION_MEMBERS_DB_ID chưa được cấu hình');
+      }
+
+      // Check if member already exists
+      const existing = await this.getMemberByNotionId(data.notionId);
+      if (existing) {
+        throw new MemberValidationError(`Member với notionId "${data.notionId}" đã tồn tại`);
+      }
+
+      const newPage = await notion.createPage(dbId, {
+        Name: {
+          title: [{ text: { content: data.name.trim() } }],
+        },
+        Email: {
+          email: data.email.trim().toLowerCase(),
+        },
+        NotionId: {
+          rich_text: [{ text: { content: data.notionId.trim() } }],
+        },
+      });
+
+      logger.info('Thêm member mới thành công', { name: data.name, notionId: data.notionId });
+
+      return {
+        name: data.name.trim(),
+        email: data.email.trim().toLowerCase(),
+        notionId: data.notionId.trim(),
+        pageId: newPage.id,
+      };
+    } catch (err) {
+      if (err instanceof MemberValidationError) throw err;
+      logger.error('Lỗi thêm member', { error: err.message });
+      throw err;
+    }
+  },
+
+  async removeMember(notionId) {
+    try {
+      const member = await this.getMemberByNotionId(notionId);
+      if (!member) return false;
+
+      const notion = getNotionService();
+      await notion.updatePage(member.pageId, {
+        archived: true,
+      });
+
+      logger.info('Xóa member thành công', { name: member.name, notionId });
+      return true;
+    } catch (err) {
+      logger.error('Lỗi xóa member', { notionId, error: err.message });
+      return false;
+    }
+  },
+
+  async updateMember(notionId, updates) {
+    try {
+      const member = await this.getMemberByNotionId(notionId);
+      if (!member) return null;
+
+      const updated = { ...member, ...updates, notionId };
+      validateMember(updated);
+
+      const notion = getNotionService();
+      const properties = {};
+
+      if (updates.name) {
+        properties.Name = {
+          title: [{ text: { content: updates.name.trim() } }],
+        };
+      }
+
+      if (updates.email) {
+        properties.Email = {
+          email: updates.email.trim().toLowerCase(),
+        };
+      }
+
+      await notion.updatePage(member.pageId, properties);
+
+      logger.info('Cập nhật member thành công', { name: updated.name, notionId });
+      return updated;
+    } catch (err) {
+      if (err instanceof MemberValidationError) throw err;
+      logger.error('Lỗi cập nhật member', { notionId, error: err.message });
+      throw err;
+    }
   },
 };
 
