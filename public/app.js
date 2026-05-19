@@ -86,26 +86,30 @@ async function loadMembers() {
     }
 
     container.innerHTML = `
-      <table>
+      <table class="ds-table">
         <thead>
           <tr>
-            <th>Name</th>
+            <th>Member</th>
             <th>Email</th>
             <th>Notion ID</th>
-            <th>Action</th>
+            <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           ${members.map((m) => `
             <tr>
-              <td>${escapeHtml(m.name)}</td>
-              <td>${escapeHtml(m.email)}</td>
-              <td><code>${escapeHtml(m.notionId)}</code></td>
               <td>
-                <button class="btn btn-small" onclick="deleteMember('${escapeHtml(m.notionId)}')">
-                  <svg class="icon-small" viewBox="0 0 24 24">
-                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div class="avatar">${escapeHtml(m.name).split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase()}</div>
+                  <span style="font-weight:500;">${escapeHtml(m.name)}</span>
+                </div>
+              </td>
+              <td style="color:var(--muted);">${escapeHtml(m.email)}</td>
+              <td style="font-family:var(--font-mono);font-size:12px;">${escapeHtml(m.notionId).slice(0, 14)}...</td>
+              <td><span class="badge badge-success">Active</span></td>
+              <td>
+                <button class="btn btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteMember('${escapeHtml(m.notionId)}')">
                   Delete
                 </button>
               </td>
@@ -210,10 +214,10 @@ function renderSummaryTable(result) {
   }
 
   const tableHtml = `
-    <div style="margin-bottom: var(--spacing-md);">
-      <p class="text-muted"><strong>Ngày:</strong> ${escapeHtml(date)} • <strong>Thành viên:</strong> ${members.length}</p>
+    <div style="margin-bottom:16px;">
+      <p class="text-muted text-sm"><strong>Ngày:</strong> ${escapeHtml(date)} &nbsp;·&nbsp; <strong>Thành viên:</strong> ${members.length}</p>
     </div>
-    <table>
+    <table class="ds-table">
       <thead>
         <tr>
           <th>Thành viên</th>
